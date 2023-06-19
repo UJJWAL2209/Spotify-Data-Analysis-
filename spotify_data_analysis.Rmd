@@ -1,0 +1,240 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(gridExtra)
+library(factoextra)
+```
+
+```{r}
+#ss <- readr::read_csv('C:/Users/ASUS/Desktop/r codes/spotify_songs.csv')
+ss <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv')
+```
+
+```{r}
+names(ss)
+```
+
+```{r}
+str(ss[])
+```
+
+```{r}
+ss$mode <- as.factor(ss$mode)
+ss$track_album_release_date <- as.Date(ss$track_album_release_date)
+```
+
+```{r}
+sum(is.na(ss))
+```
+
+```{r}
+colSums(is.na(ss))
+```
+
+```{r}
+ss$track_artist[is.na(ss$track_artist)] <- 'NA'
+ss$track_album_name[is.na(ss$track_album_name)] <- 'NA'
+ss$track_name[is.na(ss$track_name)] <- 'NA'
+```
+
+```{r}
+library("dplyr")
+summary(select_if(ss,is.numeric))
+```
+
+```{r}
+df_2 <- subset(ss, danceability > min(danceability) & loudness > min(loudness) & tempo > min(tempo) & tempo < max(tempo))
+```
+
+```{r}
+par(mfrow = c(2, 2))
+
+boxplot(df_2$danceability, main = 'Distribution of Danceability')
+boxplot(df_2$loudness, main = 'Distribution of loudness')
+boxplot(df_2$tempo , main = 'Distribution of tempo')
+```
+
+```{r}
+knitr::kable(head(df_2,5), "simple")
+```
+
+```{r}
+library("tidyr")
+#### Extracting Year from songs
+ss <- ss %>%
+separate(track_album_release_date,
+c("year","month","day"),
+sep = "-") 
+
+#### Creating minutes from duration
+ss<-ss %>% 
+  mutate(duration_min=duration_ms/60000)
+
+#### changing data type of year column
+ss$year <- as.numeric(ss$year)
+```
+
+```{r}
+popularity_order<-select(ss,track_popularity,track_artist,track_album_name)
+arrange(popularity_order,desc(track_popularity))
+```
+
+```{r}
+popularity_order <- popularity_order%>% filter(duplicated(track_popularity)== FALSE)
+popularity_order
+```
+
+```{r}
+pop2 <- arrange(popularity_order,desc(track_popularity))
+pop2
+```
+
+```{r}
+pop3 <- table(pop2$track_artist)
+pop3
+```
+
+```{r}
+t<-barplot(pop3)
+```
+
+```{r}
+coord_flip(t)
+```
+
+```{r}
+library(dplyr)
+
+aa2<-ss
+
+aa2$speech_only <- cut(aa2$speechiness, breaks = 10)
+aa2 %>%
+  ggplot( aes(x = speech_only )) +
+  geom_bar(width = 0.8, fill = "blue", colour = "black") +
+  scale_x_discrete(name = "Speechiness")
+```
+
+```{r}
+aa<-ss
+aa$energy_only <- cut(aa$energy, breaks = 10)
+aa %>%
+  ggplot( aes(x = energy_only )) +
+  geom_bar(width = 1, fill = "blue", colour = "black") +
+  scale_x_discrete(name = "Energy")
+```
+
+```{r}
+library(corrplot)
+```
+
+```{r}
+library(GGally)
+```
+
+```{r}
+corr <- ss %>%
+select(track_popularity,danceability,energy,loudness,speechiness,acousticness,instrumentalness, liveness, valence, tempo)
+
+ggcorr(corr,
+       nbreaks = 6,
+       label = TRUE,
+       label_size = 3,
+       color = "grey50")
+```
+
+```{r}
+library(ggplot2)
+#### Plotting Density Plots
+ggplot(ss) +
+  geom_density(aes(energy, fill ="energy", alpha = 0.1)) + 
+  geom_density(aes(danceability, fill ="danceability", alpha = 0.1)) + 
+  geom_density(aes(valence, fill ="valence", alpha = 0.1)) + 
+  geom_density(aes(acousticness, fill ="acousticness", alpha = 0.1)) + 
+  geom_density(aes(speechiness, fill ="speechiness", alpha = 0.1)) + 
+  geom_density(aes(liveness, fill ="liveness", alpha = 0.1)) + 
+  scale_x_continuous(name = "Energy, Danceability, Valence, Acousticness, Speechiness and Liveness") +
+  scale_y_continuous(name = "Density") +
+  ggtitle("Density plot of Energy, Danceability, Valence, Acousticness, Speechiness and Liveness") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 10, face = "bold"),
+        text = element_text(size = 10)) +
+  theme(legend.title=element_blank()) +
+  scale_fill_brewer(palette="Accent")
+```
+
+```{r}
+bp <- ggplot(ss, aes(energy, playlist_genre)) + 
+  geom_boxplot(aes(fill = playlist_genre)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+bp
+```
+
+```{r}
+bp1 <- ggplot(ss, aes(danceability, playlist_genre)) + 
+  geom_boxplot(aes(fill = playlist_genre)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+bp1
+```
+
+```{r}
+bp2 <- ggplot(ss, aes(liveness, playlist_genre)) + 
+  geom_boxplot(aes(fill = playlist_genre)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+bp2
+```
+
+```{r}
+bp3 <- ggplot(ss, aes(valence, playlist_genre)) + 
+  geom_boxplot(aes(fill = playlist_genre)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+bp3
+```
+
+```{r}
+bp4 <- ggplot(ss, aes(loudness, playlist_genre)) + 
+  geom_boxplot(aes(fill = playlist_genre)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+bp4
+```
+
+```{r}
+trend_chart <- function(arg){
+trend_change <- ss %>% filter(year>2010) %>% group_by(year) %>% summarize_at(vars(all_of(arg)), funs(Average = mean))
+chart<- ggplot(data = trend_change, aes(x = year, y = Average)) +
+geom_line(color = "black", size = 1) +
+scale_x_continuous(breaks=seq(2011, 2020, 3)) + scale_y_continuous(name=paste("",arg,sep=""))
+return(chart)
+}
+
+trend_chart_track_popularity<-trend_chart("track_popularity") + theme_classic()
+```
+
+```{r}
+library("cowplot")
+trend_chart_danceability<-trend_chart("danceability")  + theme_classic()
+trend_chart_energy<-trend_chart("energy")  + theme_classic()
+trend_chart_loudness<-trend_chart("loudness")
+trend_chart_duration_min<-trend_chart("duration_min")  + theme_classic()
+trend_chart_speechiness<-trend_chart("speechiness")  + theme_classic()
+
+plot_grid(trend_chart_track_popularity, trend_chart_danceability, trend_chart_energy, trend_chart_loudness, trend_chart_duration_min, trend_chart_speechiness,ncol = 3, label_size = 3)
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
